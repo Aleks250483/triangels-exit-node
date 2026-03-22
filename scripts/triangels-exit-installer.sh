@@ -1,48 +1,59 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+VERSION="1.1"
+LOG_FILE="/var/log/triangels-exit-install.log"
 
-echo "🚀 TriAngels Exit Node Installer v1.0"
-echo "====================================="
+echo "🚀 TriAngels Exit Node Installer v$VERSION"
+echo "📄 Лог: $LOG_FILE"
 
-# ===== ВВОД ДАННЫХ =====
+# === Проверка root ===
+if [ "$EUID" -ne 0 ]; then
+  echo "❌ Запусти скрипт с sudo"
+  exit 1
+fi
 
-read -p "Введите hostname (например triangels-exit-hu-01): " HOSTNAME
-read -p "Введите Headscale URL (например https://your-core): " HEADSCALE_URL
-read -p "Введите Auth Key (hskey-...): " AUTH_KEY
+# === Логирование ===
+exec > >(tee -a "$LOG_FILE") 2>&1
 
-# ===== ОБНОВЛЕНИЕ =====
+# === Ввод данных ===
+read -rp "Введите hostname (например triangels-exit-hu-01): " HOSTNAME
+read -rp "Введите Headscale URL (например https://your-core): " HEADSCALE_URL
+read -rp "Введите Auth Key (hskey-...): " AUTH_KEY
 
 echo "📦 Обновление системы..."
-sudo apt update && sudo apt upgrade -y
+apt update && apt upgrade -y
 
-echo "📦 Установка пакетов..."
-sudo apt install -y curl sudo ufw nano iptables-persistent
-
-# ===== HOSTNAME =====
+echo "🧰 Установка базовых пакетов..."
+apt install -y curl wget git ufw fail2ban iptables-persistent
 
 echo "🖥 Установка hostname..."
-sudo hostnamectl set-hostname "$HOSTNAME"
+hostnamectl set-hostname "$HOSTNAME"
 
-# ===== IP FORWARDING =====
+echo "🔥 Настройка firewall..."
+ufw allow OpenSSH
+ufw allow 41641/udp
+ufw --force enable
 
-echo "🌐 Включение IP forwarding..."
-sudo bash -c 'cat >> /etc/sysctl.conf <<EOF
+echo "🔒 Включение fail2ban..."
+systemctl enable fail2ban
+systemctl start fail2ban
+
+echo "⚡ Включение IP forwarding..."
+grep -q "TriAngels IP Forwarding" /etc/sysctl.conf || cat <<EOF >> /etc/sysctl.conf
 
 # TriAngels IP Forwarding
 net.ipv4.ip_forward=1
 net.ipv6.conf.all.forwarding=1
-EOF'
+EOF
 
-sudo sysctl -p
+sysctl -p
 
-# ===== TAILSCALE =====
-
-echo "📡 Установка Tailscale..."
+echo "🌐 Установка Tailscale..."
 curl -fsSL https://tailscale.com/install.sh | sh
 
 echo "🔗 Подключение к Headscale..."
-sudo tailscale up \
+tailscale up \
   --login-server="$HEADSCALE_URL" \
   --auth-key="$AUTH_KEY" \
   --hostname="$HOSTNAME" \
@@ -50,22 +61,17 @@ sudo tailscale up \
   --accept-dns=false \
   --reset
 
-# ===== NAT =====
-
 echo "🔁 Настройка NAT..."
-
 IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
-
 echo "Интерфейс: $IFACE"
 
-sudo iptables -t nat -A POSTROUTING -o "$IFACE" -j MASQUERADE
-sudo netfilter-persistent save
+iptables -t nat -C POSTROUTING -o "$IFACE" -j MASQUERADE 2>/dev/null || \
+iptables -t nat -A POSTROUTING -o "$IFACE" -j MASQUERADE
 
-# ===== NETWORK TUNING =====
+netfilter-persistent save
 
 echo "⚡ Применение Network Tuning..."
-
-sudo bash -c 'cat >> /etc/sysctl.conf <<EOF
+grep -q "TriAngels Network Tuning Baseline v1.0" /etc/sysctl.conf || cat <<EOF >> /etc/sysctl.conf
 
 # TriAngels Network Tuning Baseline v1.0
 net.core.rmem_max = 67108864
@@ -77,14 +83,11 @@ net.ipv4.tcp_congestion_control = bbr
 net.core.default_qdisc = fq
 net.ipv4.tcp_fastopen = 3
 net.ipv4.tcp_mtu_probing = 1
-EOF'
+EOF
 
-sudo sysctl -p
-
-# ===== ПРОВЕРКИ =====
+sysctl -p
 
 echo "🔍 Проверка статуса..."
-
 tailscale status || true
 tailscale netcheck || true
 
@@ -94,9 +97,10 @@ sysctl net.core.default_qdisc
 
 echo "🌐 Проверка IP forwarding..."
 sysctl net.ipv4.ip_forward
+sysctl net.ipv6.conf.all.forwarding
 
 echo "🔁 Проверка NAT..."
-sudo iptables -t nat -L -n
+iptables -t nat -L -n
 
 echo "====================================="
 echo "✅ Установка завершена!"
