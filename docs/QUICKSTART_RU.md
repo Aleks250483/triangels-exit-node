@@ -27,10 +27,13 @@
 
 ```bash
 ssh username@SERVER_IP
+```
 
 Если вход под root:
-
+```bash
 ssh root@SERVER_IP
+```
+
 Шаг 2. Скачать установщик
 
 Выполнить на сервере:
