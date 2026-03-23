@@ -37,19 +37,23 @@ ssh root@SERVER_IP
 Шаг 2. Скачать установщик
 
 Выполнить на сервере:
-
+```bash
 curl -fsSL -o triangels-exit-installer.sh https://raw.githubusercontent.com/Aleks250483/triangels-exit-node/main/scripts/triangels-exit-installer.sh
+```
 Шаг 3. Выдать права на запуск
+```bash
 chmod +x triangels-exit-installer.sh
+```
 Шаг 4. Запустить установщик
 
 Если вы вошли как root:
-
+```bash
 ./triangels-exit-installer.sh
-
+```
 Если вы вошли как обычный пользователь:
-
+```bash
 sudo ./triangels-exit-installer.sh
+```
 Шаг 5. Ответить на вопросы установщика
 
 Скрипт попросит ввести:
@@ -79,19 +83,23 @@ Auth Key
 Шаг 6. Скачать скрипт проверки
 
 После установки можно проверить состояние ноды.
-
+```bash
 curl -fsSL -o triangels-exit-verify.sh https://raw.githubusercontent.com/Aleks250483/triangels-exit-node/main/scripts/triangels-exit-verify.sh
+```
 Шаг 7. Выдать права на запуск
+```bash
 chmod +x triangels-exit-verify.sh
+```
 Шаг 8. Запустить проверку
 
 Если вы вошли как root:
-
+```bash
 ./triangels-exit-verify.sh
-
+```
 Если вы вошли как обычный пользователь:
-
+```bash
 sudo ./triangels-exit-verify.sh
+```
 Что проверяет verify
 
 Скрипт проверяет:
@@ -105,9 +113,9 @@ NAT
 Что проверить администратору на Core
 
 После установки на Core-сервере выполнить:
-
+```bash
 headscale nodes list
-
+```
 Нужно убедиться, что новая нода:
 
 появилась в списке
@@ -119,21 +127,24 @@ online
 
 выбрать exit node
 проверить внешний IP:
+```bash
 curl ifconfig.me
-
+```
 IP должен совпасть с IP exit-ноды.
 
 Типовой сценарий установки
+```bash
 ssh username@SERVER_IP
 curl -fsSL -o triangels-exit-installer.sh https://raw.githubusercontent.com/Aleks250483/triangels-exit-node/main/scripts/triangels-exit-installer.sh
 chmod +x triangels-exit-installer.sh
 sudo ./triangels-exit-installer.sh
-
+```
 Потом:
-
+```bash
 curl -fsSL -o triangels-exit-verify.sh https://raw.githubusercontent.com/Aleks250483/triangels-exit-node/main/scripts/triangels-exit-verify.sh
 chmod +x triangels-exit-verify.sh
 sudo ./triangels-exit-verify.sh
+```
 Если что-то пошло не так
 
 Проверьте:
