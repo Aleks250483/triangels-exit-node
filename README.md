@@ -1,10 +1,11 @@
-# triangels-exit-node
-Стандарты, автоматизация и эксплуатация exit-нод TriAngels Mesh (Headscale + Tailscale)
+
 # TriAngels Exit Node
 
 Стандарты, автоматизация и эксплуатация exit-нод TriAngels Mesh (Headscale + Tailscale)
 
----
+## 🚀 Быстрый старт
+
+👉 [Открыть инструкцию (RU)](docs/QUICKSTART_RU.md)
 
 ## 🧭 О проекте
 
